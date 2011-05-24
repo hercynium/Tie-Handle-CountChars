@@ -110,7 +110,7 @@ sub READLINE {
     $_[0]->{read} += length $lines;
     return $lines;
   }
-  # XXX: if wantarry is undef, we have void context. can that ever happen here?
+  # XXX: if wantarray is undef, we have void context. can that ever happen here?
 }
 
 
@@ -119,7 +119,7 @@ sub READLINE {
 sub EOF     { eof(     $_[0]->{dup_fh} ) }
 sub TELL    { tell(    $_[0]->{dup_fh} ) }
 sub FILENO  { fileno(  $_[0]->{dup_fh} ) }
-sub CLOSE   { print "\n****** CLOSING!!! ******\n"; close(   $_[0]->{dup_fh} ) }
+sub CLOSE   { close(   $_[0]->{dup_fh} ) }
 sub BINMODE { binmode( $_[0]->{dup_fh} ) }
 sub SEEK    { seek(    $_[0]->{dup_fh}, $_[1], $_[2] ) }
 
@@ -133,11 +133,7 @@ sub OPEN {
    open( $_[0]->{dup_fh}, $_[1], $_[2] ) ;
 }
 
-sub DESTROY {
-  print "\n**** DESTROYING *****\n" . Dumper @_;
-}
-
-#### DO I NEED TO DEFINE UNTIE? DESTROY?
+sub DESTROY { $_[0]->CLOSE( $_[0]->{dup_fh} ) }
 
 1 && q{ I can't believe this wasn't already on the CPAN. }; # truth
 __END__
@@ -191,7 +187,7 @@ actually exists.
 
 So... why B<characters> and not B<bytes>? Simple. When working with B<ASCII>,
 I<characters *are* bytes>... but if the handle you've got is using B<utf8>
-mode, I<characters can potientially be several bytes long>, and the various
+mode, I<characters can potentially be several bytes long>, and the various
 facilities in perl to track this stuff always return
 B<character counts, not bytes>! 
 
@@ -271,7 +267,7 @@ Caveats include the usual when using tie, and also the fact that this adds
 overhead to any operations done on the tied handles. I don't know I<how much>
 overhead, but I suspect that for applications that need maximum IO performance
 it could be a deal-breaker. However, why don't you try it and let me know. I
-stringly suspect that the overhead will not make much of a difference for the
+strongly suspect that the overhead will not make much of a difference for the
 vast majority of those who use this.
 
 =head1 SUPPORT
