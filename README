@@ -1,1 +1,174 @@
-Coming soon...
+NAME
+    Tie::Handle::CountChars - make your handles count the characters in and
+    out
+
+VERSION
+    version 0.1.0 (alpha: interfaces and implementations may change)
+
+SYNOPSIS
+      use File::Temp qw( tmpnam );
+      use File::Slurp qw( read_file );
+
+      use Tie::Handle::CountChars qw( make_fh_accountable );
+
+      my $tmpfile = tmpnam();
+
+      open my $fh, '>', $tmpfile;
+
+      make_fh_accountable( $fh );    # this does the tie properly
+
+      print $fh "FOO\n";             # write 4 bytes to the handle
+      syswrite $fh, "BAR\nX\n\n", 6; # only write 6 of the 7 bytes
+      close $fh;
+
+      my $chars_in_file = length scalar read_file( $tmpfile );
+      my $chars_written = ( tied *$fh )->chars_written;
+
+      print "CHARS IN FILE: $chars_in_file\n";
+      print "CHARS WRITTEN: $chars_written\n";
+      print $chars_in_file == $chars_written ? "OK\n" : "NOT OK\n";
+
+DESCRIPTION
+    This module allows you to keep track of the characters written to and
+    read from a perl "HANDLE" (or IO::Handle object). This seems to work for
+    anything that behaves as a HANDLE, including anything that inherits from
+    IO::Handle.
+
+    When you are done counting the chars, get your data by calling methods
+    on the tied-object and then simply untie the handle.
+
+    This almost certainly imposes a performance penalty on IO through the
+    tied handles but I have yet to benchmark it to figure out how much of an
+    impact actually exists.
+
+    So... why characters and not bytes? Simple. When working with ASCII,
+    *characters *are* bytes*... but if the handle you've got is using utf8
+    mode, *characters can potientially be several bytes long*, and the
+    various facilities in perl to track this stuff always return character
+    counts, not bytes!
+
+    I could add some code to tease out the actual byte-count in all cases,
+    but I'll wait for somebody to formally request it before even trying.
+    *(hint, hint: patches welcome!)*
+
+EXPORTABLE FUNCTIONS
+    make_fh_accountable( $fh )
+        This function takes a reference to the handle you want to tie and
+        does the tie properly. When called in void context, nothing is
+        returned. When called in scalar context, the tie-object is returned.
+        When called in list context, the tie-object and the tied handle are
+        returned.
+
+        Remember, the argument must be a reference to the handle GLOB or a
+        handle-like variable (for example, something that inherits from
+        IO::Handle)
+
+        Some examples:
+
+          make_fh_accountable( \*STDOUT     );
+          make_fh_accountable( $io_file_obj );
+          make_fh_accountable( $lexical_fh  );
+
+METHODS
+    All methods listed below must be called on the tie-object, obtained like
+    so:
+
+      my $to = tied *$fh;
+
+    chars_read()
+        Returns the number of characters read from the tied handle.
+
+    chars_written()
+        Returns the number of characters written to the tied handle.
+
+    chars_total()
+        The sum of the read and written character counts.
+
+SEE ALSO
+    Tie::Handle
+    IO::WrapTie
+    IO::Handle
+    perlopentut
+    perlipc
+    perltie
+    IO::Socket::ByteCounter
+
+BUGS & CAVEATS
+    No known bugs yet. Please report any you find and I'm happy to fix them.
+
+    Caveats include the usual when using tie, and also the fact that this
+    adds overhead to any operations done on the tied handles. I don't know
+    *how much* overhead, but I suspect that for applications that need
+    maximum IO performance it could be a deal-breaker. However, why don't
+    you try it and let me know. I strongly suspect that the overhead will
+    not make much of a difference for the vast majority of those who use
+    this.
+
+SUPPORT
+  bugs
+    Please report any bugs or feature requests via one of the following:
+
+    *   Web: The CPAN Request Tracker (RT) queue for this module
+
+    *   Email: CPAN RT email queue for this module
+
+  feature requests
+    If you want additional features, please make that request by opening a
+    ticket in RT, just like for bug reports, as described above.
+
+  questions
+    If you have questions, please contact me via one of the following:
+
+    *   Email to the author or maintainers
+
+    *   IRC channel #perl-help on irc.perl.org
+
+    *   IRC channel #perl on irc.freenode.net
+
+  source code
+    Each release will be tagged with the version, and main development will
+    typically be merged into the branch named 'master'
+
+    *   Github HTTP
+
+    *   Git read-only
+
+  other info
+    You may also find more information at:
+
+    *   CPAN Distribution Home
+
+    *   Ratings and Reviews
+
+    *   CPAN Testing Matrix
+
+    *   Dependencies and Test Results
+
+    *   Reverse Dependencies (Distribution)
+
+    *   Reverse Dependencies (Module)
+
+    *   AnnoCPAN: Annotated CPAN documentation
+
+    *   CPAN Forum
+
+    *   perldoc
+
+        After installing, you can find this documentation with the perldoc
+        command:
+
+          perldoc Tie::Handle::CountChars
+
+AUTHOR
+    Stephen R. Scaffidi
+
+CONTRIBUTORS & ACKNOWLEDGEMENTS
+    Submit bug reports or feature requests or patches to get your name right
+    here!
+
+COPYRIGHT & LICENSE
+    Copyright 2011 Stephen R. Scaffidi , all rights reserved.
+
+    This program is free software; you can redistribute it and/or modify it
+    under the same terms as Perl itself.
+
