@@ -1,16 +1,15 @@
 package Tie::Handle::CountChars;
+# ABSTRACT: make your handles count the characters in and out
 use strict;
 use warnings;
 use version 0.77; our $VERSION = version->declare( "v0.1.0" );
-# ABSTRACT: make your handles count the bytes in and out
-use base qw( Exporter Tie::Handle );
+use base qw( Exporter );
 use Carp;
-use Data::Dumper;
 
 our @EXPORT_OK = qw( make_fh_accountable );
 
 # TODO: find a way to keep errors from reporting from this package.
-#  $Carp::Internal does not seem to work :-/
+#  $Carp::Internal does not seem to work the way I want :-/
 
 ### TODO? make the tie-object inherit from the same classes as the tied
 ###  file-handle. Doing so might allow us to simply use the object as
@@ -24,10 +23,10 @@ sub chars_total   { my $self = shift; return $self->{read} + $self->{written} }
 
 
 # convienence export to make the tie prettier
-sub make_fh_accountable {
-  return tie *{$_[0]}, __PACKAGE__, $_[0];
-}
+sub make_fh_accountable { return tie *{$_[0]}, __PACKAGE__, $_[0] }
 
+# standard constructor
+sub new { shift->TIEHANDLE(@_) }
 
 # create the tie by aliasing the file-handle. The user must actually tie the
 # actual glob and then pass a ref to that glob as an argument after the tie
@@ -102,15 +101,15 @@ sub READLINE {
   my $fh = $_[0]->{dup_fh};
   if ( wantarray ) {
     my @lines = <$fh>;
-    $_[0]->{read} += length join '', @lines;
+    $_[0]->{read} += length join('', @lines) if defined $lines[0];
     return @lines;
   }
   elsif ( defined wantarray ) {
     my $lines = <$fh>;
-    $_[0]->{read} += length $lines;
+    $_[0]->{read} += length $lines if defined $lines;
     return $lines;
   }
-  # XXX: if wantarray is undef, we have void context. can that ever happen here?
+  # XXX: if wantarry is undef, we have void context. can that ever happen here?
 }
 
 
@@ -135,12 +134,13 @@ sub OPEN {
 
 sub DESTROY { $_[0]->CLOSE( $_[0]->{dup_fh} ) }
 
+
 1 && q{ I can't believe this wasn't already on the CPAN. }; # truth
 __END__
 
 =head1 NAME
 
-Tie::Handle::CountChars - make your handles count the bytes in and out
+Tie::Handle::CountChars - make your handles count the characters in and out
 
 =head1 VERSION
 
@@ -187,7 +187,7 @@ actually exists.
 
 So... why B<characters> and not B<bytes>? Simple. When working with B<ASCII>,
 I<characters *are* bytes>... but if the handle you've got is using B<utf8>
-mode, I<characters can potentially be several bytes long>, and the various
+mode, I<characters can potientially be several bytes long>, and the various
 facilities in perl to track this stuff always return
 B<character counts, not bytes>! 
 
@@ -303,17 +303,40 @@ If you have questions, please contact me via one of the following:
 
 =back
 
-=head2 other info
+=head2 source code
 
-You can also find more information at:
+Each release will be tagged with the version, and main development will
+typically be merged into the branch named 'master'
 
 =over 4
 
+=item * L<< Github HTTP | https://github.com/Hercynium/Tie-Handle-CountChars >>
+
+=item * L<< Git read-only | git://github.com/Hercynium/Tie-Handle-CountChars.git >> 
+
+=back
+
+=head2 other info
+
+You may also find more information at:
+
+=over 4
+
+=item * L<< CPAN Distribution Home | http://search.cpan.org/dist/Tie-Handle-CountChars >>
+
+=item * L<< Ratings and Reviews | http://cpanratings.perl.org/d/Tie-Handle-CountChars >>
+
+=item * L<< CPAN Testing Matrix | http://matrix.cpantesters.org/?dist=Tie-Handle-CountChars >>
+
+=item * L<< Dependencies and Test Results | http://deps.cpantesters.org/?module=Tie::Handle::CountChars >>
+
+=item * L<< Reverse Dependencies (Distribution) | http://deps.cpantesters.org/depended-on-by.pl?dist=Tie-Handle-CountChars >>
+
+=item * L<< Reverse Dependencies (Module) | http://deps.cpantesters.org/depended-on-by.pl?module=Tie::Handle::CountChars >>
+
 =item * L<< AnnoCPAN: Annotated CPAN documentation | http://annocpan.org/dist/Tie-Handle-CountChars >>
 
-=item * L<< CPAN Ratings | http://cpanratings.perl.org/d/Tie-Handle-CountChars >>
-
-=item * L<< CPAN Search | http://search.cpan.org/dist/Tie-Handle-CountChars >>
+=item * L<< CPAN Forum | http://cpanforum.com/dist/Tie-Handle-CountChars >>
 
 =item * perldoc
 
